@@ -70,3 +70,36 @@ button:hover {
   margin-top: 15px;
   width: 100%;
 }
+#adminBtn {
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
+  background: transparent;
+  color: #00b3ff;
+  border: none;
+  opacity: 0.15;
+  cursor: pointer;
+}
+
+.admin {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #02060c;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 0 25px #00b3ff;
+  z-index: 1000;
+}
+
+.admin input {
+  display: block;
+  margin: 10px 0;
+  padding: 10px;
+  width: 100%;
+}
+
+.hidden {
+  display: none;
+}

@@ -6,6 +6,21 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- ADMIN LOGIN BUTTON (HIDDEN) -->
+<button id="adminBtn" onclick="openAdmin()">Producer Login</button>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="admin hidden">
+  <h2>Producer Panel</h2>
+
+  <input id="name" placeholder="Item name">
+  <input id="price" type="number" placeholder="Price">
+  <input id="image" placeholder="Image URL">
+
+  <button onclick="addProduct()">Add Item</button>
+  <button onclick="logout()">Logout</button>
+</div>
+
 
 <header>
   <h1>NEON VAULT</h1>
