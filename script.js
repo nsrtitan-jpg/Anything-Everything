@@ -12,6 +12,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 // ---- Admin Emails ----
 const ADMIN_EMAILS = [
@@ -45,7 +46,7 @@ const authSection = document.getElementById("auth-section");
 const productTitleInput = document.getElementById("product-title");
 const productDescriptionInput = document.getElementById("product-description");
 const productPriceInput = document.getElementById("product-price");
-const productImageInput = document.getElementById("product-image");
+const productImageFileInput = document.getElementById("product-image-file");
 const addProductBtn = document.getElementById("add-product-btn");
 
 const productsGrid = document.getElementById("products-grid");
@@ -57,15 +58,40 @@ const cartCountSpan = document.getElementById("cart-count");
 const cartTotalSpan = document.getElementById("cart-total");
 const checkoutBtn = document.getElementById("checkout-btn");
 
+const themeToggle = document.getElementById("theme-toggle");
+
 // ---- State ----
 let currentUser = null;
 let isAdmin = false;
 let cart = [];
 
+// ---- Theme ----
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("urbanMarketTheme", theme);
+}
+
+function initTheme() {
+  const stored = localStorage.getItem("urbanMarketTheme");
+  if (stored === "dark" || stored === "light") {
+    applyTheme(stored);
+  } else {
+    applyTheme("light");
+  }
+}
+
+themeToggle.addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const next = current === "light" ? "dark" : "light";
+  applyTheme(next);
+});
+
+initTheme();
+
 // ---- Helpers ----
 function setMessage(el, msg, type = "") {
   el.textContent = msg;
-  el.className = "message " + type;
+  el.className = "message" + (type ? " " + type : "");
 }
 
 function updateAuthUI(user) {
@@ -108,21 +134,22 @@ function renderProducts(products) {
     if (data.imageUrl) {
       const img = document.createElement("img");
       img.src = data.imageUrl;
+      img.alt = data.title || "Product image";
       img.className = "product-image";
       card.appendChild(img);
     }
 
     const title = document.createElement("div");
     title.className = "product-title";
-    title.textContent = data.title;
+    title.textContent = data.title || "Untitled product";
 
     const desc = document.createElement("div");
     desc.className = "product-description";
-    desc.textContent = data.description;
+    desc.textContent = data.description || "";
 
     const price = document.createElement("div");
     price.className = "product-price";
-    price.textContent = `$${Number(data.price).toFixed(2)}`;
+    price.textContent = `$${Number(data.price || 0).toFixed(2)}`;
 
     const footer = document.createElement("div");
     footer.className = "product-footer";
@@ -130,11 +157,12 @@ function renderProducts(products) {
     const addBtn = document.createElement("button");
     addBtn.className = "btn secondary";
     addBtn.textContent = "Add to Cart";
-    addBtn.onclick = () => addToCart({
-      id: doc.id,
-      title: data.title,
-      price: Number(data.price)
-    });
+    addBtn.onclick = () =>
+      addToCart({
+        id: doc.id,
+        title: data.title,
+        price: Number(data.price || 0)
+      });
 
     footer.appendChild(price);
     footer.appendChild(addBtn);
@@ -194,7 +222,7 @@ function updateCartUI() {
     cartItemsDiv.appendChild(row);
   });
 
-  cartCountSpan.textContent = cart.length;
+  cartCountSpan.textContent = String(cart.length);
   cartTotalSpan.textContent = total.toFixed(2);
 }
 
@@ -202,6 +230,11 @@ function updateCartUI() {
 loginSubmit.onclick = async () => {
   const email = loginEmailInput.value.trim();
   const password = loginPasswordInput.value.trim();
+
+  if (!email || !password) {
+    setMessage(authMessage, "Enter email and password.", "error");
+    return;
+  }
 
   try {
     await auth.signInWithEmailAndPassword(email, password);
@@ -215,6 +248,15 @@ signupSubmit.onclick = async () => {
   const email = signupEmailInput.value.trim();
   const password = signupPasswordInput.value.trim();
 
+  if (!email || !password) {
+    setMessage(authMessage, "Enter email and password.", "error");
+    return;
+  }
+  if (password.length < 6) {
+    setMessage(authMessage, "Password must be at least 6 characters.", "error");
+    return;
+  }
+
   try {
     await auth.createUserWithEmailAndPassword(email, password);
     setMessage(authMessage, "Account created.", "success");
@@ -225,7 +267,10 @@ signupSubmit.onclick = async () => {
 
 logoutBtn.onclick = () => auth.signOut();
 
-// ---- Admin: Add product ----
+loginBtn.onclick = () => authSection.scrollIntoView({ behavior: "smooth" });
+signupBtn.onclick = () => authSection.scrollIntoView({ behavior: "smooth" });
+
+// ---- Admin: Add product with image upload ----
 addProductBtn.onclick = async () => {
   if (!isAdmin) {
     setMessage(adminMessage, "Only admins can add products.", "error");
@@ -235,20 +280,32 @@ addProductBtn.onclick = async () => {
   const title = productTitleInput.value.trim();
   const description = productDescriptionInput.value.trim();
   const price = parseFloat(productPriceInput.value);
-  const imageUrl = productImageInput.value.trim();
+  const file = productImageFileInput.files[0];
 
   if (!title || isNaN(price)) {
     setMessage(adminMessage, "Title and valid price required.", "error");
     return;
   }
 
+  if (!file) {
+    setMessage(adminMessage, "Please select an image.", "error");
+    return;
+  }
+
   try {
+    setMessage(adminMessage, "Uploading image...", "");
+
+    const storageRef = storage.ref(`product_images/${Date.now()}_${file.name}`);
+    await storageRef.put(file);
+    const downloadURL = await storageRef.getDownloadURL();
+
     await db.collection("products").add({
       title,
       description,
       price,
-      imageUrl,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      imageUrl: downloadURL,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: currentUser ? currentUser.uid : null
     });
 
     setMessage(adminMessage, "Product added.", "success");
@@ -256,7 +313,7 @@ addProductBtn.onclick = async () => {
     productTitleInput.value = "";
     productDescriptionInput.value = "";
     productPriceInput.value = "";
-    productImageInput.value = "";
+    productImageFileInput.value = "";
   } catch (err) {
     setMessage(adminMessage, err.message, "error");
   }
@@ -279,7 +336,7 @@ checkoutBtn.onclick = () => {
 // ---- Auth listener ----
 auth.onAuthStateChanged((user) => {
   currentUser = user;
-  isAdmin = user && ADMIN_EMAILS.includes(user.email);
+  isAdmin = !!(user && ADMIN_EMAILS.includes(user.email));
   updateAuthUI(user);
   updateAdminUI();
 });
@@ -287,6 +344,11 @@ auth.onAuthStateChanged((user) => {
 // ---- Firestore listener ----
 db.collection("products")
   .orderBy("createdAt", "desc")
-  .onSnapshot((snapshot) => {
-    renderProducts(snapshot.docs);
-  });
+  .onSnapshot(
+    (snapshot) => {
+      renderProducts(snapshot.docs);
+    },
+    (err) => {
+      setMessage(marketMessage, "Error loading products: " + err.message, "error");
+    }
+  );

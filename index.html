@@ -10,25 +10,39 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 </head>
 
 <body>
   <header class="top-bar">
     <div class="logo">Urban Market</div>
+
     <nav class="nav">
-      <span id="user-email"></span>
-      <button id="login-btn" class="btn primary">Login</button>
+      <div class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+        <div class="theme-toggle-pill">
+          <span class="theme-icon theme-icon-light">☀</span>
+          <span class="theme-icon theme-icon-dark">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </div>
+      </div>
+
+      <span id="user-email" class="user-email"></span>
+      <button id="login-btn" class="btn secondary">Login</button>
       <button id="signup-btn" class="btn secondary">Sign Up</button>
       <button id="logout-btn" class="btn danger hidden">Logout</button>
-      <button id="cart-toggle-btn" class="btn secondary">Cart (<span id="cart-count">0</span>)</button>
+      <button id="cart-toggle-btn" class="btn primary subtle">
+        Cart (<span id="cart-count">0</span>)
+      </button>
     </nav>
   </header>
 
   <main class="container">
     <!-- Auth -->
     <section id="auth-section" class="card">
-      <h2>Welcome</h2>
-      <p>Login or create an account to start shopping.</p>
+      <h2>Welcome to Urban Market</h2>
+      <p class="muted">
+        Sign in or create an account to start browsing and managing products.
+      </p>
 
       <div class="auth-forms">
         <div class="auth-form">
@@ -39,7 +53,7 @@
         </div>
 
         <div class="auth-form">
-          <h3>Sign Up</h3>
+          <h3>Create Account</h3>
           <input type="email" id="signup-email" placeholder="Email" />
           <input type="password" id="signup-password" placeholder="Password (6+ chars)" />
           <button id="signup-submit" class="btn secondary full">Sign Up</button>
@@ -51,14 +65,32 @@
 
     <!-- Admin Panel -->
     <section id="admin-section" class="card hidden">
-      <h2>Admin Panel</h2>
-      <p>Add products to the marketplace.</p>
+      <div class="card-header">
+        <div>
+          <h2>Admin Panel</h2>
+          <p class="muted">Add new products to the marketplace.</p>
+        </div>
+        <span class="badge badge-admin">Admin</span>
+      </div>
 
       <div class="admin-form">
-        <input type="text" id="product-title" placeholder="Product title" />
-        <textarea id="product-description" placeholder="Description"></textarea>
-        <input type="number" id="product-price" placeholder="Price (USD)" step="0.01" />
-        <input type="text" id="product-image" placeholder="Image URL (optional)" />
+        <label class="field-label">Product title</label>
+        <input type="text" id="product-title" placeholder="e.g. Wireless Mechanical Keyboard" />
+
+        <label class="field-label">Description</label>
+        <textarea id="product-description" placeholder="Short description of the product"></textarea>
+
+        <div class="field-row">
+          <div class="field-col">
+            <label class="field-label">Price (USD)</label>
+            <input type="number" id="product-price" placeholder="49.99" step="0.01" />
+          </div>
+          <div class="field-col">
+            <label class="field-label">Image</label>
+            <input type="file" id="product-image-file" accept="image/*" />
+          </div>
+        </div>
+
         <button id="add-product-btn" class="btn primary full">Add Product</button>
       </div>
 
@@ -67,19 +99,36 @@
 
     <!-- Marketplace -->
     <section id="market-section" class="card">
-      <h2>Marketplace</h2>
+      <div class="card-header">
+        <div>
+          <h2>Marketplace</h2>
+          <p class="muted">Browse products added by the admin.</p>
+        </div>
+      </div>
+
       <div id="products-grid" class="products-grid"></div>
       <p id="market-message" class="message"></p>
     </section>
 
     <!-- Cart -->
     <section id="cart-section" class="card hidden">
-      <h2>Your Cart</h2>
+      <div class="card-header">
+        <div>
+          <h2>Your Cart</h2>
+          <p class="muted">Review items before checkout.</p>
+        </div>
+      </div>
+
       <div id="cart-items"></div>
+
       <div class="cart-footer">
-        <span>Total: $<span id="cart-total">0.00</span></span>
+        <span class="cart-total-label">
+          Total:
+          <span class="cart-total-amount">$<span id="cart-total">0.00</span></span>
+        </span>
         <button id="checkout-btn" class="btn primary">Checkout (demo)</button>
       </div>
+
       <p id="cart-message" class="message"></p>
     </section>
   </main>
