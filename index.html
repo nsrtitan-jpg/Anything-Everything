@@ -5,11 +5,13 @@
   <title>Urban Market</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
+
 <body>
   <header class="top-bar">
     <div class="logo">Urban Market</div>
@@ -23,7 +25,7 @@
   </header>
 
   <main class="container">
-    <!-- Auth section -->
+    <!-- Auth -->
     <section id="auth-section" class="card">
       <h2>Welcome</h2>
       <p>Login or create an account to start shopping.</p>
@@ -47,10 +49,10 @@
       <p id="auth-message" class="message"></p>
     </section>
 
-    <!-- Admin panel -->
+    <!-- Admin Panel -->
     <section id="admin-section" class="card hidden">
       <h2>Admin Panel</h2>
-      <p>Upload products to the marketplace.</p>
+      <p>Add products to the marketplace.</p>
 
       <div class="admin-form">
         <input type="text" id="product-title" placeholder="Product title" />
@@ -66,9 +68,7 @@
     <!-- Marketplace -->
     <section id="market-section" class="card">
       <h2>Marketplace</h2>
-      <div id="products-grid" class="products-grid">
-        <!-- Products injected here -->
-      </div>
+      <div id="products-grid" class="products-grid"></div>
       <p id="market-message" class="message"></p>
     </section>
 

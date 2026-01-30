@@ -13,8 +13,11 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ---- Config: set your admin email here ----
-const ADMIN_EMAIL = "youremail@example.com"; // change this to your email
+// ---- Admin Emails ----
+const ADMIN_EMAILS = [
+  "nsrtitan@gmail.com",
+  "davidmichaelcox@gmail.com"
+];
 
 // ---- DOM refs ----
 const loginBtn = document.getElementById("login-btn");
@@ -62,14 +65,7 @@ let cart = [];
 // ---- Helpers ----
 function setMessage(el, msg, type = "") {
   el.textContent = msg;
-  el.classList.remove("error", "success");
-  if (type) el.classList.add(type);
-}
-
-function clearMessages() {
-  [authMessage, adminMessage, marketMessage, cartMessage].forEach((el) => {
-    setMessage(el, "");
-  });
+  el.className = "message " + type;
 }
 
 function updateAuthUI(user) {
@@ -89,44 +85,44 @@ function updateAuthUI(user) {
 }
 
 function updateAdminUI() {
-  if (isAdmin) {
-    adminSection.classList.remove("hidden");
-  } else {
-    adminSection.classList.add("hidden");
-  }
+  adminSection.classList.toggle("hidden", !isAdmin);
 }
 
+// ---- Render products ----
 function renderProducts(products) {
   productsGrid.innerHTML = "";
+
   if (!products.length) {
-    setMessage(marketMessage, "No products yet. Check back soon.", "");
+    setMessage(marketMessage, "No products yet.");
     return;
   }
+
   setMessage(marketMessage, "");
+
   products.forEach((doc) => {
     const data = doc.data();
+
     const card = document.createElement("div");
     card.className = "product-card";
 
     if (data.imageUrl) {
       const img = document.createElement("img");
       img.src = data.imageUrl;
-      img.alt = data.title || "Product image";
       img.className = "product-image";
       card.appendChild(img);
     }
 
     const title = document.createElement("div");
     title.className = "product-title";
-    title.textContent = data.title || "Untitled product";
+    title.textContent = data.title;
 
     const desc = document.createElement("div");
     desc.className = "product-description";
-    desc.textContent = data.description || "";
+    desc.textContent = data.description;
 
     const price = document.createElement("div");
     price.className = "product-price";
-    price.textContent = `$${Number(data.price || 0).toFixed(2)}`;
+    price.textContent = `$${Number(data.price).toFixed(2)}`;
 
     const footer = document.createElement("div");
     footer.className = "product-footer";
@@ -134,12 +130,10 @@ function renderProducts(products) {
     const addBtn = document.createElement("button");
     addBtn.className = "btn secondary";
     addBtn.textContent = "Add to Cart";
-    addBtn.addEventListener("click", () => {
-      addToCart({
-        id: doc.id,
-        title: data.title,
-        price: Number(data.price || 0)
-      });
+    addBtn.onclick = () => addToCart({
+      id: doc.id,
+      title: data.title,
+      price: Number(data.price)
     });
 
     footer.appendChild(price);
@@ -153,6 +147,7 @@ function renderProducts(products) {
   });
 }
 
+// ---- Cart ----
 function addToCart(item) {
   cart.push(item);
   updateCartUI();
@@ -160,6 +155,7 @@ function addToCart(item) {
 
 function updateCartUI() {
   cartItemsDiv.innerHTML = "";
+
   if (!cart.length) {
     cartItemsDiv.textContent = "Your cart is empty.";
     cartCountSpan.textContent = "0";
@@ -168,8 +164,10 @@ function updateCartUI() {
   }
 
   let total = 0;
+
   cart.forEach((item, index) => {
     total += item.price;
+
     const row = document.createElement("div");
     row.className = "cart-item";
 
@@ -184,10 +182,10 @@ function updateCartUI() {
     const removeBtn = document.createElement("button");
     removeBtn.className = "btn danger";
     removeBtn.textContent = "X";
-    removeBtn.addEventListener("click", () => {
+    removeBtn.onclick = () => {
       cart.splice(index, 1);
       updateCartUI();
-    });
+    };
 
     row.appendChild(title);
     row.appendChild(price);
@@ -196,70 +194,41 @@ function updateCartUI() {
     cartItemsDiv.appendChild(row);
   });
 
-  cartCountSpan.textContent = String(cart.length);
+  cartCountSpan.textContent = cart.length;
   cartTotalSpan.textContent = total.toFixed(2);
 }
 
 // ---- Auth actions ----
-loginSubmit.addEventListener("click", async () => {
-  clearMessages();
+loginSubmit.onclick = async () => {
   const email = loginEmailInput.value.trim();
   const password = loginPasswordInput.value.trim();
-  if (!email || !password) {
-    setMessage(authMessage, "Please enter email and password.", "error");
-    return;
-  }
+
   try {
     await auth.signInWithEmailAndPassword(email, password);
-    setMessage(authMessage, "Logged in successfully.", "success");
+    setMessage(authMessage, "Logged in.", "success");
   } catch (err) {
     setMessage(authMessage, err.message, "error");
   }
-});
+};
 
-signupSubmit.addEventListener("click", async () => {
-  clearMessages();
+signupSubmit.onclick = async () => {
   const email = signupEmailInput.value.trim();
   const password = signupPasswordInput.value.trim();
-  if (!email || !password) {
-    setMessage(authMessage, "Please enter email and password.", "error");
-    return;
-  }
-  if (password.length < 6) {
-    setMessage(authMessage, "Password must be at least 6 characters.", "error");
-    return;
-  }
+
   try {
     await auth.createUserWithEmailAndPassword(email, password);
-    setMessage(authMessage, "Account created and logged in.", "success");
+    setMessage(authMessage, "Account created.", "success");
   } catch (err) {
     setMessage(authMessage, err.message, "error");
   }
-});
+};
 
-logoutBtn.addEventListener("click", async () => {
-  clearMessages();
-  try {
-    await auth.signOut();
-    setMessage(authMessage, "Logged out.", "success");
-  } catch (err) {
-    setMessage(authMessage, err.message, "error");
-  }
-});
+logoutBtn.onclick = () => auth.signOut();
 
-// Just scroll to auth section when clicking top buttons
-loginBtn.addEventListener("click", () => {
-  authSection.scrollIntoView({ behavior: "smooth" });
-});
-signupBtn.addEventListener("click", () => {
-  authSection.scrollIntoView({ behavior: "smooth" });
-});
-
-// ---- Admin: add product ----
-addProductBtn.addEventListener("click", async () => {
-  clearMessages();
-  if (!currentUser || !isAdmin) {
-    setMessage(adminMessage, "Only admin can add products.", "error");
+// ---- Admin: Add product ----
+addProductBtn.onclick = async () => {
+  if (!isAdmin) {
+    setMessage(adminMessage, "Only admins can add products.", "error");
     return;
   }
 
@@ -269,7 +238,7 @@ addProductBtn.addEventListener("click", async () => {
   const imageUrl = productImageInput.value.trim();
 
   if (!title || isNaN(price)) {
-    setMessage(adminMessage, "Title and valid price are required.", "error");
+    setMessage(adminMessage, "Title and valid price required.", "error");
     return;
   }
 
@@ -279,10 +248,11 @@ addProductBtn.addEventListener("click", async () => {
       description,
       price,
       imageUrl,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      createdBy: currentUser.uid
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+
     setMessage(adminMessage, "Product added.", "success");
+
     productTitleInput.value = "";
     productDescriptionInput.value = "";
     productPriceInput.value = "";
@@ -290,38 +260,33 @@ addProductBtn.addEventListener("click", async () => {
   } catch (err) {
     setMessage(adminMessage, err.message, "error");
   }
-});
+};
 
-// ---- Cart toggle & checkout ----
-cartToggleBtn.addEventListener("click", () => {
+// ---- Cart toggle ----
+cartToggleBtn.onclick = () => {
   cartSection.classList.toggle("hidden");
-});
+};
 
-checkoutBtn.addEventListener("click", () => {
+// ---- Checkout ----
+checkoutBtn.onclick = () => {
   if (!cart.length) {
-    setMessage(cartMessage, "Your cart is empty.", "error");
+    setMessage(cartMessage, "Cart is empty.", "error");
     return;
   }
-  setMessage(cartMessage, "Checkout is demo-only. No real payment processed.", "success");
-});
+  setMessage(cartMessage, "Checkout is demo-only.", "success");
+};
 
-// ---- Auth state listener ----
+// ---- Auth listener ----
 auth.onAuthStateChanged((user) => {
   currentUser = user;
-  isAdmin = !!(user && user.email === ADMIN_EMAIL);
+  isAdmin = user && ADMIN_EMAILS.includes(user.email);
   updateAuthUI(user);
   updateAdminUI();
 });
 
-// ---- Firestore: live products listener ----
+// ---- Firestore listener ----
 db.collection("products")
   .orderBy("createdAt", "desc")
-  .onSnapshot(
-    (snapshot) => {
-      const docs = snapshot.docs;
-      renderProducts(docs);
-    },
-    (err) => {
-      setMessage(marketMessage, "Error loading products: " + err.message, "error");
-    }
-  );
+  .onSnapshot((snapshot) => {
+    renderProducts(snapshot.docs);
+  });
